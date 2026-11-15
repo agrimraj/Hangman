@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Arcade Hangman Deluxe</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;600;700&display=swap">
+<style>
+:root{color-scheme:dark;--bg:#0d1431;--bg2:#162250;--ink:#f4efe3;--dim:#8f9bc7;--cy:#6fe3ff;--yl:#ffc93c;--pk:#ff5c9d;--ok:#5dffb0;--gd:#ffd700;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100vh;background:radial-gradient(1200px 700px at 20% -10%,var(--bg2),var(--bg));color:var(--ink);font:16px/1.5 "Space Grotesk",system-ui,sans-serif;overflow-x:hidden}
+h1,h2,.disp{font-family:Bungee,Impact,sans-serif;font-weight:400;letter-spacing:.02em}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--cy);outline-offset:3px}
+.wrap{max-width:1060px;margin:0 auto;padding:18px 16px 40px}
+.hud{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:20px}
+.logo{font-family:Bungee,Impact,sans-serif;font-size:22px;color:var(--yl);text-shadow:3px 3px 0 var(--pk)}
+.navbtns{display:flex;gap:8px;flex-wrap:wrap}
+.stats{display:flex;gap:8px;flex-wrap:wrap}
+.stat{background:#ffffff12;border:2px solid #ffffff22;border-radius:14px;padding:6px 12px;min-width:78px;transition:border-color .25s,box-shadow .25s}
+.stat small{display:block;color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.stat b{font-family:Bungee,Impact,sans-serif;font-weight:400;font-size:20px}
+.stat.hot{border-color:var(--yl);box-shadow:0 0 18px #ffc93c55}
+.stat.danger{border-color:var(--pk);box-shadow:0 0 18px #ff5c9d77;animation:pulseRed 1s infinite}
+@keyframes pulseRed{50%{background:#ff5c9d26;transform:scale(1.03)}}
+.hearts{display:flex;gap:3px;font-size:20px;letter-spacing:1px}
+.hearts i{font-style:normal;transition:transform .3s,opacity .3s}
+.hearts i.off{opacity:.18;transform:scale(.6) rotate(-20deg);filter:grayscale(1)}
+.game{display:grid;grid-template-columns:minmax(240px,330px) 1fr;gap:28px;align-items:start}
+@media(max-width:760px){.game{grid-template-columns:1fr}}
+.stage{background:linear-gradient(#ffffff0d,#ffffff04);border:2px solid #ffffff1f;border-radius:28px;padding:16px;position:relative;overflow:hidden;transition:border-color .3s,box-shadow .3s}
+.stage::before{content:"";position:absolute;inset:auto -20% -30% -20%;height:60%;background:radial-gradient(closest-side,#ffc93c40,transparent);pointer-events:none;transition:background .3s}
+.stage.danger{border-color:var(--pk);box-shadow:0 0 28px #ff5c9d66,inset 0 0 24px #ff5c9d33;animation:stagePulse 1.1s infinite}
+.stage.danger::before{background:radial-gradient(closest-side,#ff5c9d55,transparent)}
+@keyframes stagePulse{50%{box-shadow:0 0 40px #ff5c9daa,inset 0 0 32px #ff5c9d55}}
+svg{width:100%;height:auto;display:block;position:relative}
+.g{stroke:var(--ink);stroke-width:7;stroke-linecap:round;fill:none}
+.p{stroke:var(--pk);stroke-width:7;stroke-linecap:round;fill:none;opacity:0;stroke-dasharray:120;stroke-dashoffset:120;transition:opacity .1s,stroke-dashoffset .5s,filter .3s}
+.p.on{opacity:1;stroke-dashoffset:0}
+.stage.danger .p.on{filter:drop-shadow(0 0 6px var(--pk))}
+.stage.shake{animation:sh .4s}
+@keyframes sh{20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.catRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cat{display:inline-block;background:var(--cy);color:#06122e;font-weight:700;border-radius:99px;padding:3px 14px;font-size:13px}
+.dailyTag{display:inline-block;background:var(--yl);color:#1a1200;font-weight:700;border-radius:99px;padding:3px 12px;font-size:12px}
+.hint{font-size:17px;margin:10px 0 18px;max-width:58ch;color:#dfe5ff}
+.word{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
+.tile{width:clamp(34px,8vw,52px);height:clamp(46px,10vw,66px);border-radius:10px;background:var(--ink);color:#0d1431;display:grid;place-items:center;font-family:Bungee,Impact,sans-serif;font-size:clamp(22px,5vw,32px);box-shadow:0 5px 0 #b9b2a0;position:relative}
+.tile.blank{background:#ffffff14;box-shadow:inset 0 -4px 0 var(--dim);color:transparent}
+.tile.blank.gold{background:linear-gradient(145deg,#ffc93c26,#ff9f1c14);box-shadow:inset 0 -4px 0 var(--yl),0 0 14px #ffc93c55;border:2px solid #ffc93c88;animation:goldShimmer 1.8s infinite}
+.tile.blank.gold::after{content:"✨";position:absolute;top:3px;right:4px;font-size:11px;color:var(--yl)}
+@keyframes goldShimmer{50%{box-shadow:inset 0 -4px 0 var(--yl),0 0 22px #ffc93caa;border-color:var(--yl)}}
+.tile.goldHit{background:linear-gradient(145deg,#ffe066,#ffc93c);color:#1a1200;box-shadow:0 5px 0 #b8860b,0 0 20px #ffc93c88}
+.tile.pop{animation:pop .35s}
+.tile.lost{background:var(--pk);color:#fff;box-shadow:0 5px 0 #b8326c}
+@keyframes pop{50%{transform:translateY(-10px) scale(1.14)}}
+.kb{display:flex;flex-wrap:wrap;gap:7px;max-width:560px}
+.key{width:clamp(38px,9vw,50px);height:clamp(40px,9vw,50px);border-radius:12px;border:0;background:var(--bg2);box-shadow:0 5px 0 #070c20,inset 0 0 0 2px #ffffff22;font-weight:700;font-size:18px;transition:transform .08s,box-shadow .08s}
+.key:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 #070c20,inset 0 0 0 2px #ffffff22}
+.key.hit{background:var(--ok);color:#042a18;box-shadow:0 5px 0 #1f9c63}
+.key.miss{background:#2a1330;color:#7d5a8c;box-shadow:0 5px 0 #14081a;text-decoration:line-through}
+.key:disabled{cursor:default}
+.power{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 22px}
+.pw{border:2px dashed var(--yl);background:#ffc93c14;border-radius:14px;padding:8px 14px;text-align:left;transition:transform .1s}
+.pw:hover:not(:disabled){transform:translateY(-2px)}
+.pw b{display:block;color:var(--yl);font-size:15px}
+.pw small{color:var(--dim);font-size:12px}
+.pw:disabled{opacity:.4;cursor:not-allowed}
+.pw.red{border-color:var(--pk);background:#ff5c9d14}.pw.red b{color:var(--pk)}
+.msg{min-height:26px;margin:-8px 0 14px;font-weight:600;color:var(--cy)}
+.screen{position:fixed;inset:0;background:#070c20ee;display:grid;place-items:center;padding:20px;z-index:5;overflow:auto}
+.screen[hidden]{display:none}
+.card{max-width:660px;width:100%;background:var(--bg2);border:2px solid #ffffff2a;border-radius:28px;padding:26px}
+.card h1{font-size:clamp(30px,7vw,50px);margin:0 0 6px;color:var(--yl);text-shadow:4px 4px 0 var(--pk);line-height:1.05}
+.card h2{font-size:28px;margin:0 0 8px}
+.card p{color:#cdd5f5;margin:6px 0}
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0;font-size:14px}
+.rules div{background:#ffffff0d;border:1px solid #ffffff16;border-radius:14px;padding:12px}
+.rules b{color:var(--yl);display:block;margin-bottom:3px;font-size:15px}
+@media(max-width:600px){.rules{grid-template-columns:1fr}}
+.dailyBox{background:linear-gradient(135deg,#ffc93c24,#ff5c9d1c);border:2px solid var(--yl);border-radius:16px;padding:12px 16px;margin:14px 0 16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.dailyBox b{color:var(--yl);font-size:16px;display:block}
+.dailyBox span{font-size:13px;color:#e5ebff}
+.carts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+.cart{border:0;border-radius:6px 6px 16px 16px;padding:15px 12px 12px;text-align:left;background:var(--c);color:#0b1230;box-shadow:0 6px 0 #00000055;position:relative;transition:transform .12s}
+.cart::before{content:"";position:absolute;left:12px;right:12px;top:0;height:7px;background:#0b123044;border-radius:0 0 6px 6px}
+.cart:hover{transform:translateY(-4px)}
+.cart b{display:block;font-family:Bungee,Impact,sans-serif;font-weight:400;font-size:18px;margin-top:6px}
+.cart span{font-size:12px;font-weight:600;opacity:.85}
+.btn{border:0;background:var(--yl);color:#1a1200;border-radius:14px;padding:11px 22px;font-weight:700;box-shadow:0 5px 0 #a87f00;margin-top:12px}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 #a87f00}
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+.sum div{background:#ffffff0f;border-radius:14px;padding:10px;text-align:center}
+.sum b{display:block;font-family:Bungee,Impact,sans-serif;font-weight:400;font-size:26px}
+.badges{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 0}
+.badge{background:#ffc93c1f;border:2px solid var(--yl);color:var(--yl);border-radius:14px;padding:6px 12px;font-size:13px;font-weight:700;text-align:left}
+.badge small{display:block;color:var(--ink);font-weight:400;font-size:11px}
+.ask{display:flex;gap:8px;margin-top:12px}
+.ask input{flex:1;font:inherit;font-size:20px;text-transform:uppercase;padding:10px 14px;border-radius:12px;border:2px solid var(--pk);background:#0d1431;color:var(--ink)}
+.f{width:100%;font:inherit;padding:10px 14px;margin:6px 0;border-radius:12px;border:2px solid var(--cy);background:#0d1431;color:var(--ink)}
+.f:focus-visible{outline:3px solid var(--yl)}
+.floater{position:fixed;pointer-events:none;font-family:Bungee,Impact,sans-serif;font-size:22px;z-index:20;text-shadow:0 3px 0 #070c20;animation:floatUp .95s ease-out forwards}
+@keyframes floatUp{0%{opacity:1;transform:translate(-50%,0) scale(.85)}25%{transform:translate(-50%,-14px) scale(1.15)}100%{opacity:0;transform:translate(-50%,-56px) scale(1)}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+#fig{transform-origin:180px 62px}
+#trap{transform-origin:140px 242px;transition:transform .5s ease-in}
+#rope{transform-origin:180px 30px}
+#eyes,#xeyes,#smile,#prop{opacity:0;transition:opacity .3s}
+.hh #eyes{opacity:1}.lost #eyes{opacity:0}.lost #xeyes{opacity:1}.won #smile,.won #prop{opacity:1}
+.lost #trap,.won #trap{transform:rotate(75deg)}
+.lost #fig{animation:gdrop .6s ease-out forwards,gsway 1.6s ease-in-out .6s infinite}
+@keyframes gdrop{to{transform:translateY(16px)}}
+@keyframes gsway{0%,100%{transform:translateY(16px) rotate(-7deg)}50%{transform:translateY(16px) rotate(7deg)}}
+.won #rope{animation:gsnap .4s forwards}
+@keyframes gsnap{to{opacity:0;transform:translateY(-10px)}}
+.won #fig{transform-origin:180px 236px;animation:gfall .45s ease-in forwards,gdance .5s ease-in-out .45s infinite alternate}
+@keyframes gfall{to{transform:translateY(42px)}}
+@keyframes gdance{from{transform:translateY(42px) rotate(-5deg)}to{transform:translateY(24px) rotate(5deg)}}
+.bubble{position:absolute;left:14px;top:14px;max-width:62%;background:var(--ink);color:#0d1431;font-weight:700;font-size:14px;padding:6px 12px;border-radius:14px;opacity:0;transform:translateY(6px) scale(.9);transition:.25s;pointer-events:none;z-index:2}
+.bubble.on{opacity:1;transform:none}
+.flash3{position:fixed;inset:0;pointer-events:none;z-index:8;animation:fl3 .9s steps(1) forwards}
+@keyframes fl3{0%,40%,80%{background:rgba(255,92,157,.4)}20%,60%,100%{background:transparent}}
+@media(prefers-reduced-motion:reduce){#fig,#rope{animation:none!important}#trap{transition:none}.flash3{display:none}}
+</style></head>
+<body>
+<div class="wrap">
+ <div class="hud">
+  <div class="logo">ARCADE HANGMAN</div>
+  <div class="navbtns">
+   <button class="pw" id="menu" style="padding:6px 12px"><b>Restart</b><small>New game</small></button>
+   <button class="pw red" id="exit" style="padding:6px 12px"><b>Exit</b><small>Scorecard</small></button>
+   <button class="pw" id="snd" style="padding:6px 12px"><b>Sound on</b><small>SFX</small></button>
+  </div>
+  <div class="stats">
+   <div class="stat"><small>Score</small><b id="score">0</b></div>
+   <div class="stat" id="stk"><small>Streak</small><b id="streak">0x</b></div>
+   <div class="stat"><small>Word</small><b id="round">0/8</b></div>
+   <div class="stat" id="tmrBox"><small>Clock</small><b id="timer">45s</b></div>
+   <div class="stat"><small>Lives</small><div class="hearts" id="hearts"></div></div>
+  </div>
+ </div>
+ <div class="game">
+  <div class="stage" id="stage">
+   <svg viewBox="0 0 260 300" aria-label="Hangman drawing">
+    <path class="g" d="M30 280H150M60 280V30H180M60 70L95 30M140 242V280"/>
+    <path class="g" id="trap" d="M140 242H222"/>
+    <path class="g" id="rope" d="M180 30V62"/>
+    <g id="fig">
+     <circle class="p" id="p1" cx="180" cy="86" r="24" pathLength="120"/>
+     <path class="p" id="p2" d="M180 110V190"/>
+     <path class="p" id="p3" d="M180 128L150 164"/>
+     <path class="p" id="p4" d="M180 128L210 164"/>
+     <path class="p" id="p5" d="M180 190L154 236"/>
+     <path class="p" id="p6" d="M180 190L206 236"/>
+     <path class="p" id="a3w" d="M180 128L152 96"/>
+     <path class="p" id="a4w" d="M180 128L208 96"/>
+     <g id="eyes"><circle cx="172" cy="82" r="2.6" fill="#f4efe3"/><circle cx="188" cy="82" r="2.6" fill="#f4efe3"/></g>
+     <path id="xeyes" d="M167 77l9 9M176 77l-9 9M184 77l9 9M193 77l-9 9" stroke="#ff5c9d" stroke-width="3" stroke-linecap="round" fill="none"/>
+     <path id="smile" d="M172 94Q180 102 188 94" stroke="#f4efe3" stroke-width="3" stroke-linecap="round" fill="none"/>
+     <text id="prop" x="212" y="92" font-size="28" text-anchor="middle"></text>
+    </g>
+   </svg>
+   <div class="bubble" id="bubble"></div>
+  </div>
+  <div>
+   <div class="catRow"><span class="cat" id="cat"></span><span class="dailyTag" id="dailyBadge" hidden>DAILY CHALLENGE</span></div>
+   <p class="hint" id="hint"></p>
+   <div class="msg" id="msg"></div>
+   <div class="word" id="word" aria-live="polite"></div>
+   <div class="power">
+    <button class="pw" id="hint2"><b>Extra hint</b><small>200 pts · key “$”</small></button>
+    <button class="pw" id="fifty"><b>50/50</b><small>350 pts · key “%”</small></button>
+    <button class="pw" id="buy"><b>Buy a letter</b><small>500 pts · key “?”</small></button>
+    <button class="pw red" id="allin"><b>All-in guess</b><small>+300 win / -200 loss · key “!”</small></button>
+   </div>
+   <div class="kb" id="kb"></div>
+  </div>
+ </div>
+</div>
+
+<div class="screen" id="start"><div class="card">
+ <h1>Arcade Hangman</h1>
+ <p>Beat the 45-second clock across 8 rounds. Uncover the shimmering <b>Golden Tile ✨</b> for a +150 bonus!</p>
+ <div class="rules">
+  <div><b>1. Build Combos</b>Chain right letters for <b>+50 × streak</b> (up to 4x). Wrong letters cost <b>-30 pts</b> and reset your combo.</div>
+  <div><b>2. Beat the Clock</b>Solve the word before your <b>6 lives</b> or <b>45s clock</b> run out (+100 win + 20 per life saved).</div>
+  <div><b>3. Spend Wisely</b>Use points on <b>Hints (200/350)</b>, <b>50/50 (350)</b>, <b>Buy Letter (500)</b>, or go <b>All-In (!)</b>.</div>
+ </div>
+ <div class="dailyBox" id="dailyWrap">
+  <div>
+   <b>🏆 Today's Daily Challenge (<span id="dailyDate"></span>)</b>
+   <span>Same 8-word sequence for everyone today — compare scores with friends!</span>
+  </div>
+  <button class="btn" id="dailyBtn" style="margin:0">Play Daily 8</button>
+ </div>
+ <b id="rnd">Round 1 of 8: pick a category</b>
+ <div class="carts" id="carts"></div>
+</div></div>
+
+<div class="screen" id="end" hidden><div class="card">
+ <h2 id="etitle"></h2><p id="eword"></p>
+ <div class="sum"><div><b id="eScore">0</b>score</div><div><b id="eStreak">0x</b>streak</div><div><b id="eWL">0-0</b>wins–losses</div></div>
+ <button class="btn" id="next"></button> <button class="btn" id="xit" style="background:#ffffff1c;color:var(--ink);box-shadow:none">Exit game</button>
+</div></div>
+
+<div class="screen" id="gamble" hidden><div class="card">
+ <h2>All-in guess</h2><p>Type the full word. Right = <b>+300 pts</b>. Wrong = <b>-200 pts &amp; instant round loss</b>.</p>
+ <div class="ask"><input id="gin" autocomplete="off" maxlength="20" aria-label="Full word"><button class="btn" id="gok" style="margin:0">Lock it in</button></div>
+ <button class="btn" id="gno" style="background:#ffffff1c;color:var(--ink);box-shadow:none">Cancel</button>
+</div></div>
+
+<div class="screen" id="custom" hidden><div class="card">
+ <h2>Custom word</h2>
+ <p>Player 1, enter a secret word and up to 3 hints. The word stays hidden while you type. Then pass to Player 2!</p>
+ <label for="cw">Secret word (letters only)</label><input class="f" id="cw" type="password" autocomplete="off" maxlength="20">
+ <label for="ch1">Hint 1 (shown free)</label><input class="f" id="ch1" autocomplete="off" maxlength="200">
+ <label for="ch2">Hint 2 (costs 200 pts)</label><input class="f" id="ch2" autocomplete="off" maxlength="200">
+ <label for="ch3">Hint 3 (costs 350 pts)</label><input class="f" id="ch3" autocomplete="off" maxlength="200">
+ <div class="msg" id="cerr" style="color:var(--pk);margin:6px 0"></div>
+ <button class="btn" id="cgo">Start round</button> <button class="btn" id="cback" style="background:#ffffff1c;color:var(--ink);box-shadow:none">Back</button>
+</div></div>
+
+<div class="screen" id="final" hidden><div class="card" style="text-align:center;max-width:740px">
+ <div class="disp" id="fgrade" style="font-family:Bungee,Impact,sans-serif;font-size:clamp(64px,18vw,126px);line-height:1;color:var(--yl);text-shadow:6px 6px 0 var(--pk)"></div>
+ <h2 id="ftitle"></h2>
+ <div class="sum"><div><b id="fScore"></b>score</div><div><b id="fBest"></b>best streak</div><div><b id="fWL"></b>wins–losses</div></div>
+ <div class="badges" id="fbadges"></div>
+ <div id="flist" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:10px 0"></div>
+ <button class="btn" id="fshare">Share result</button> <button class="btn" id="fagain">Play again</button>
+ <div class="msg" id="fmsg" style="word-break:break-word;margin-top:10px"></div>
+</div></div>
+
+<script>
+const D={"Bollywood": [["SHOLAY", ["Classic 1975 blockbuster set in Ramgarh.", "Features iconic characters Jai, Veeru, and Thakur.", "Main villain is Gabbar Singh asking 'Kitne aadmi the?'"]], ["DANGAL", ["Biographical sports drama based on real wrestlers.", "A father trains his two daughters in Haryana.", "Starring Aamir Khan as Mahavir Singh Phogat."]], ["LAGAAN", ["Period drama set during British colonial rule.", "Villagers bet their annual tax on a single game.", "A high-stakes cricket match led by Bhuvan."]], ["BAAHUBALI", ["Grand two-part Indian epic fantasy blockbuster.", "Set in the fictional kingdom of Mahishmati.", "Left India asking why Kattappa killed him."]], ["MUNNABHAI", ["Comedy-drama about a kind-hearted Mumbai underworld don.", "He enrolls in a medical college to fulfill his father's dream.", "Uses 'Jadoo Ki Jhappi' alongside his sidekick Circuit."]], ["JAWAN", ["High-octane vigilante action thriller.", "Features a dual father-son role.", "Starring Shah Rukh Khan and Nayanthara."]], ["ANDHADHUN", ["Dark comedy thriller involving a series of murders.", "The protagonist plays the piano at a restaurant.", "He pretends to be visually impaired for his music."]], ["STREE", ["Horror-comedy set in the small town of Chanderi.", "Men are mysteriously abducted during a four-day festival.", "People write 'O Stree Kal Aana' on their walls."]], ["DRISHYAM", ["Suspense thriller centered around a middle-class family.", "The protagonist is a fourth-grade dropout cable operator.", "He uses movie plots to build an airtight alibi for October 2nd."]], ["DON", ["Stylish action thriller about an underworld boss.", "A lookalike is planted by the police to infiltrate the gang.", "Catching him is impossible across eleven countries."]], ["PATHAAN", ["A 2023 spy action blockbuster.", "Part of Yash Raj Films' spy universe.", "Shah Rukh Khan plays a spy fighting John Abraham's villain."]], ["GADAR", ["A 2001 blockbuster set around the Partition.", "A truck driver crosses the border for his wife.", "Sunny Deol as Tara Singh uproots a hand pump."]], ["SWADES", ["A film about leaving a comfortable life abroad.", "A NASA scientist returns to find his childhood nanny.", "Shah Rukh Khan as Mohan Bhargav brings electricity to a village."]], ["DEVDAS", ["A tragic love story based on a classic Bengali novel.", "A grand Sanjay Leela Bhansali production from 2002.", "A heartbroken man torn between Paro and Chandramukhi."]], ["PADMAN", ["A film built around a very taboo topic.", "Inspired by a man from Tamil Nadu who made a cheap invention.", "Akshay Kumar makes low-cost sanitary pads."]], ["KAHAANI", ["A 2012 mystery thriller set in Kolkata.", "A pregnant woman searches for her missing husband.", "Vidya Balan plays Vidya Bagchi in this twisty thriller."]], ["BARFI", ["A sweet-natured 2012 film with almost no dialogue.", "Set partly in Darjeeling and Kolkata.", "Ranbir Kapoor plays a deaf and mute man."]], ["THREEIDIOTS", ["A 2009 comedy-drama about engineering college.", "Directed by Rajkumar Hirani.", "Aamir Khan as Rancho teaches everyone to say All Izz Well."]], ["GOLMAAL", ["A popular comedy franchise by Rohit Shetty.", "Features a gang of troublemakers sharing a house.", "Ajay Devgn leads the fun with Arshad Warsi and Tusshar Kapoor."]], ["BHOOLBHULAIYAA", ["A horror-comedy about a mansion with a dark secret.", "The ghost in the story is named Manjulika.", "Akshay Kumar starred in the first film in 2007."]], ["KOIMILGAYA", ["A 2003 sci-fi film about a special friend from space.", "A slow-minded boy gains incredible powers.", "Hrithik Roshan befriends the alien Jadoo."]], ["KRRISH", ["An Indian superhero franchise.", "A masked hero inspired by his father's legacy.", "Hrithik Roshan wears the black mask."]], ["DHOOM", ["A fast-paced action franchise on two wheels.", "Cops chase slick thieves across cities.", "Features high-speed superbike heists and Jai Dixit."]], ["QUEEN", ["A 2014 film about self-discovery.", "A bride jilted before the wedding goes on honeymoon alone.", "Kangana Ranaut backpacks through Paris and Amsterdam."]], ["CHAKDEINDIA", ["A sports drama that taught the nation to believe.", "A disgraced coach redeems himself with a team.", "Shah Rukh Khan trains the women's hockey team as Kabir Khan."]], ["HERAPHERI", ["A cult comedy about three broke men.", "Features a dim landlord and a bank-loan scheme.", "Baburao, Raju and Shyam star in this laugh riot."]], ["ROCKSTAR", ["A musical drama directed by Imtiaz Ali.", "A small-town singer chases heartbreak for inspiration.", "Ranbir Kapoor plays Janardhan Jakhar, also known as Jordan."]], ["SANJU", ["A 2018 biopic about a controversial actor.", "Directed by Rajkumar Hirani.", "Ranbir Kapoor plays Sanjay Dutt."]], ["RAAZI", ["A spy thriller set during the 1971 war.", "Based on a novel about a Kashmiri woman.", "Alia Bhatt marries a Pakistani officer as an Indian spy."]], ["TUMBBAD", ["A dark fantasy horror from 2018.", "A greedy family is tied to a cursed god.", "A forgotten deity named Hastar guards gold in a rainy village."]]], "Cricket": [["YORKER", ["A lethal fast-bowling delivery.", "Pitches right inside the batter's crease.", "Aimed directly at the batter's toes or base of the stumps."]], ["GOOGLY", ["A deceptive spin-bowling variation.", "Bowled out of the back of the hand by a leg-spinner.", "Turns the exact opposite way the batter expects."]], ["HELICOPTER", ["An unconventional, high-power batting shot.", "Developed to counter full-length yorkers in death overs.", "MS Dhoni's signature wristy whip over mid-wicket."]], ["CENTURY", ["A major personal batting milestone.", "Requires surviving at the crease for a long innings.", "Scored when a single batter reaches 100 runs."]], ["DUCKWORTH", ["A statistical system used in limited-overs cricket.", "Only comes into play when bad weather interrupts a match.", "Calculates revised target scores in rain-hit games."]], ["POWERPLAY", ["A special phase of fielding restrictions.", "Designed to encourage aggressive strokeplay.", "Only two fielders are allowed outside the 30-yard circle initially."]], ["HATTRICK", ["A rare and celebrated bowling achievement.", "Can even be split across two different overs.", "Dismissing three batters on three consecutive deliveries."]], ["SUPEROVER", ["An intense tie-breaking format.", "Each team nominates three batters and one bowler.", "A one-over eliminator played when a T20 match ends level."]], ["SLOGSWEEP", ["An aggressive cross-batted shot against spinners.", "The batter drops down onto one knee.", "Launched high over deep mid-wicket for a maximum."]], ["DOOSRA", ["A tricky variation bowled by an off-spinner.", "Released with a different wrist orientation.", "Spins away from a right-hander instead of turning in."]], ["BOUNCER", ["A short-pitched, intimidating delivery.", "Aimed to rise sharply at the batter's body.", "Bowled so the ball goes above shoulder height."]], ["MAIDEN", ["A rare achievement in a single over.", "The bowler's team concedes nothing.", "An over with no runs scored by the batters."]], ["NOBALL", ["An illegal delivery that helps the batting side.", "Usually caused by the bowler overstepping the crease.", "Gives the batting team an extra run and a free hit."]], ["FREEHIT", ["A gift for the batter in limited-overs cricket.", "Follows an illegal delivery by the bowler.", "The batter can only be dismissed by a run out."]], ["RUNOUT", ["A dismissal that is rarely the bowler's doing.", "Happens when a batter is short of the crease.", "Fielders break the stumps before the batter reaches safety."]], ["STUMPED", ["A dismissal involving the wicketkeeper.", "Happens when the batter steps out of the crease.", "The keeper breaks the wicket after the batter misses the ball."]], ["UMPIRE", ["A match official with a big responsibility.", "Stands in the middle and signals decisions.", "Raises a finger to give a batter out."]], ["LORDS", ["A famous cricket ground in London.", "Known as the Home of Cricket.", "Has a famous honours board and hosts Test matches and finals."]], ["ASHES", ["One of the oldest rivalries in sport.", "Played between England and Australia.", "The trophy is a tiny urn."]], ["WANKHEDE", ["A famous stadium in Mumbai.", "Hosted the 2011 World Cup final.", "Dhoni's six sealed India's win here."]], ["COVERDRIVE", ["A classic and elegant batting stroke.", "Played on the off side with a straight bat.", "Virat Kohli's trademark shot through the off side."]], ["REVERSESWEEP", ["A bold and unorthodox batting shot.", "The batter switches grip or angle against a spinner.", "Sends the ball to the opposite side of a normal sweep."]], ["NIGHTWATCHMAN", ["A defensive tactical substitute in Test cricket.", "Sent in late in the day to protect better batters.", "A lower-order player who bats higher to survive until stumps."]], ["MANKAD", ["A controversial method of dismissal.", "A bowler runs out the non-striker.", "Named after Indian cricketer Vinoo, it happens before delivery."]], ["GULLY", ["A close fielding position on the off side.", "Placed between slip and point.", "Also the name for a narrow lane where kids play cricket."]], ["TENDULKAR", ["A cricket legend known as the God of Cricket.", "He scored 100 international centuries.", "Sachin wore the number 10 and played 200 Tests."]], ["SLEDGING", ["A psychological tactic on the field.", "Players talk to distract the opposition.", "Verbal banter meant to put the batter off."]], ["ORANGECAP", ["A prestigious award in the IPL.", "Worn by the leading run scorer.", "Given to the batter with the most runs in the season."]], ["LEGSPIN", ["A type of bowling that needs wrist action.", "Shane Warne was the greatest of this art.", "Spinning the ball from leg to off."]], ["HOWZAT", ["A shout of appeal from the fielding team.", "Asked loudly after a possible dismissal.", "Short for How is that? when appealing to the umpire."]]], "Street Food": [["GOLGAPPA", ["India's undisputed king of street snacks.", "Known by different names like Puchka and Pani Puri.", "Crispy hollow puri filled with spicy tamarind water."]], ["VADAPAV", ["An affordable, handheld everyday snack.", "Served inside a soft bun with dry garlic chutney.", "Mumbai's iconic spicy potato fritter burger."]], ["SAMOSA", ["A crunchy, deep-fried savory snack.", "Best enjoyed hot with mint chutney and chai.", "Golden pastry triangle stuffed with spiced potatoes and peas."]], ["JALEBI", ["A bright, festive Indian sweet.", "Made by piping fermented batter into hot oil.", "Crispy orange spirals soaked in warm saffron sugar syrup."]], ["CHHOLE", ["A rich, tangy North Indian curry.", "Cooked with black tea bags for a dark color.", "Spicy chickpeas famously paired with fluffy fried Bhature."]], ["POHA", ["A light, wholesome morning breakfast dish.", "Very popular across Madhya Pradesh and Maharashtra.", "Flattened rice tempered with turmeric, peanuts, sev, and lemon."]], ["KACHORI", ["A round, crispy, deep-fried stuffed snack.", "Famous in Rajasthan, Uttar Pradesh, and central India.", "Flaky pastry filled with spiced lentils or onions."]], ["BIRYANI", ["A royal, aromatic one-pot rice delicacy.", "Often served with cooling raita and salan.", "Layered basmati rice slow-cooked with saffron and spices."]], ["MASALADOSA", ["A classic South Indian breakfast favorite.", "Served alongside coconut chutney and hot sambar.", "Crispy fermented crepe stuffed with spiced potato filling."]], ["KULFI", ["A traditional frozen Indian dessert.", "Often served on a wooden stick or in a matka.", "Dense, slow-simmered milk ice cream flavored with pistachio."]], ["DHOKLA", ["A soft, spongy snack from Gujarat.", "Made from fermented rice and chickpea batter.", "Steamed, yellow and tempered with mustard seeds."]], ["PAVBHAJI", ["A famous Mumbai street dish.", "A buttery, spiced vegetable mash.", "Served with soft toasted buns."]], ["BHELPURI", ["A light snack famous on Mumbai beaches.", "Tossed with chutneys, onion and tomato.", "Made with puffed rice and sev."]], ["SEVPURI", ["A chaat served on flat crispy discs.", "Topped with chutney, onions and potato.", "Finished with a heap of thin gram flour noodles."]], ["ALOOTIKKI", ["A crispy chaat staple in North India.", "Shallow-fried on a flat griddle.", "Spiced mashed potato patties with chutneys."]], ["KATHIROLL", ["A Kolkata invention for eating on the go.", "A paratha wrapped around a filling.", "Egg-coated flatbread rolled with kebabs or paneer."]], ["MOMOS", ["A popular Himalayan import.", "Served with a fiery red chutney.", "Steamed or fried dumplings filled with veggies or chicken."]], ["FALOODA", ["A cold dessert drink with many layers.", "Includes basil seeds and vermicelli.", "Rose syrup, milk and ice cream make this drink."]], ["IMARTI", ["A bright orange sweet that looks like a flower.", "Made from urad dal batter and fried.", "Soaked in sugar syrup, a cousin of jalebi."]], ["GULABJAMUN", ["A beloved dessert at weddings and festivals.", "Soft, round and soaked in cardamom syrup.", "Deep-fried milk-solid dumplings in sugar syrup."]], ["LITTICHOKHA", ["A rustic meal from Bihar.", "Roasted wheat balls with a spicy stuffing.", "Served with mashed smoky roasted vegetables."]], ["MISALPAV", ["A fiery Maharashtrian breakfast.", "Topped with farsan and chopped onions.", "Spicy sprouted-lentil curry served with buns."]], ["DABELI", ["A snack from Kutch in Gujarat.", "Spiced potato mixture with peanuts and pomegranate.", "Stuffed inside a bun and rolled in sev."]], ["CHOWMEIN", ["An Indo-Chinese street favourite.", "Wok-tossed with sauces and vegetables.", "Stir-fried noodles sold at roadside carts."]], ["PAKORA", ["A rainy-day favourite with chai.", "Vegetables dipped in spiced batter.", "Gram flour fritters deep-fried until crispy."]], ["BHUTTA", ["A roadside monsoon snack.", "Roasted over charcoal and rubbed with lemon.", "Corn on the cob with chilli and salt."]], ["JALJEERA", ["A tangy cooling summer drink.", "Spiced with cumin, mint and black salt.", "Served in a glass with tiny crunchy boondi."]], ["LASSI", ["A thick cooling beverage from Punjab.", "Often topped with a layer of malai.", "A yogurt-based drink, sweet or salted."]], ["KULCHA", ["A flatbread stuffed and baked in a tandoor.", "Famous in Amritsar.", "Soft leavened bread served with chhole."]], ["NIMBUPANI", ["A refreshing summer drink.", "Sweet and salty with a sour twist.", "Lemon juice, water, sugar and salt."]]], "Desi Nostalgia & College Life": [["GULLIDANDA", ["A traditional outdoor street sport.", "Requires zero expensive gear to play in a lane.", "Played using a wooden stick and a small tapered peg."]], ["ANTAKSHARI", ["A classic group party and road-trip game.", "Tests your memory of Bollywood songs.", "You sing a song starting with the last letter of the previous one."]], ["SHAKTIMAAN", ["A beloved 1990s Indian television superhero.", "His clumsy alter ego was a journalist named Gangadhar.", "Gained superpowers through meditation and spun to fly."]], ["MALGUDI", ["A nostalgic setting from classic Indian literature.", "Brought to life in an iconic Doordarshan TV series.", "Fictional South Indian town created by R.K. Narayan."]], ["CANTEEN", ["The liveliest hangout spot on every campus.", "More lectures are skipped here than anywhere else.", "College headquarters fueled by cutting chai and Maggi."]], ["CHAI", ["An everyday beverage across every Indian street.", "Often brewed with ginger, cardamom, and masala.", "Served in small cutting glasses at every nukkad."]], ["LUDO", ["A classic four-color tabletop board game.", "Safe zones are marked with stars on the board.", "The game that instantly turns best friends into rivals."]], ["TUITION", ["An after-school routine for millions of students.", "Usually happens in the evening at a teacher's house.", "Extra classes where half the time went into gossiping."]], ["PROXY", ["A classic college classroom maneuver.", "Requires imitating a friend's voice convincingly.", "Answering roll call attendance for an absent friend."]], ["JUGAAD", ["A uniquely Indian approach to problem-solving.", "Turns broken items into working solutions.", "The legendary art of clever, low-cost improvisation."]], ["LAGORI", ["A childhood game that needed a ball and some stones.", "Also called Seven Stones.", "One team stacks stones while the other throws a ball to knock them down."]], ["KABADDI", ["A contact sport that needs one deep breath.", "Raiders try to tag defenders and return.", "Players chant continuously while they raid."]], ["CARROM", ["A tabletop game played with flicks.", "Uses a square wooden board with four pockets.", "Strikers pot coins with a flick of the finger."]], ["PATANG", ["A Makar Sankranti must-have in Gujarat.", "Strings are coated with glass powder.", "A paper kite flown with manjha."]], ["DOORDARSHAN", ["The only channel of many childhoods.", "Its opening tune was instantly recognisable.", "India's national public television broadcaster."]], ["RAMAYAN", ["A 1980s TV serial that emptied streets.", "Directed by Ramanand Sagar.", "Told the story of Lord Ram on television."]], ["CHITRAHAAR", ["A weekly show of film songs on TV.", "Families gathered to watch it together.", "Played Hindi film song clips on Doordarshan."]], ["DORAEMON", ["A blue cartoon favourite of kids.", "Has a pocket of magical gadgets from the future.", "A robot cat who helps Nobita."]], ["HOSTEL", ["A second home with shared rooms.", "Where midnight Maggi and friendships are made.", "A residence for college students away from home."]], ["ATTENDANCE", ["A number every student worries about.", "A minimum percentage is required to sit exams.", "Marked by roll call in lectures."]], ["BACKBENCHER", ["A student known for sitting in the last row.", "Often the funniest or sleepiest in class.", "Sits at the very back to chat or nap."]], ["FRESHERS", ["A party held to welcome the new batch.", "Seniors organise it with songs and dances.", "First-year students at a college."]], ["FAREWELL", ["An emotional end-of-year event.", "Juniors organise it for the final-year batch.", "A goodbye party for graduating students."]], ["SEMESTER", ["A half-yearly stretch of college life.", "Ends with a stressful round of exams.", "One of two academic terms in a year."]], ["PRACTICALS", ["Lab sessions with lab coats.", "Students record their work in a file.", "Hands-on exams in physics, chemistry and biology."]], ["VIVA", ["An exam that makes students nervous.", "An external examiner asks questions in person.", "Conducted orally, face to face with an examiner."]], ["BACKLOG", ["A student's unwanted baggage.", "A subject you failed and must clear again.", "A pending paper carried over from an earlier semester."]], ["ASSIGNMENT", ["Homework nobody did until the night before.", "Copied from a friend's notebook at the last minute.", "A written task submitted for marks."]], ["CHHOTABHEEM", ["A cartoon hero from Dholakpur.", "Loves eating laddoos for strength.", "A brave boy who defends his village with Chutki and Raju."]], ["TIFFIN", ["A school or office staple packed by mum.", "Often shared with friends during recess.", "A lunch box."]]]};
+
+const COL={"Bollywood":"#ff5c9d","Cricket":"#5dffb0","Street Food":"#ffc93c","Desi Nostalgia & College Life":"#6fe3ff","All categories":"#f4efe3","Custom word":"#b79cff"};
+const $=id=>document.getElementById(id), MAX=6, ROUNDS=8, ROUND_TIME=45;
+let pool=[],S={},clockId=null;
+
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+const esc=t=>t.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// Daily Challenge Seeded RNG
+const todayStr=new Date().toISOString().slice(0,10);
+$("dailyDate").textContent=todayStr;
+function seededShuffle(arr,seedStr){
+ let h=2166136261>>>0;
+ for(let i=0;i<seedStr.length;i++){h^=seedStr.charCodeAt(i);h=Math.imul(h,16777619)}
+ const rand=()=>{h+=0x6D2B79F5;let t=Math.imul(h^h>>>15,1|h);t^=t+Math.imul(t^t>>>7,61|t);return((t^t>>>14)>>>0)/4294967296};
+ const a=arr.slice();
+ for(let i=a.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[a[i],a[j]]=[a[j],a[i]]}
+ return a;
+}
+
+// Floating Score Popup
+function popFloat(text,color,anchorEl){
+ const el=document.createElement("div");
+ el.className="floater";
+ el.textContent=text;
+ el.style.color=color||"var(--ok)";
+ if(anchorEl){
+  const r=anchorEl.getBoundingClientRect();
+  el.style.left=(r.left+r.width/2)+"px";
+  el.style.top=(r.top-6)+"px";
+ }else{
+  el.style.left="50%";
+  el.style.top="32%";
+ }
+ document.body.appendChild(el);
+ setTimeout(()=>el.remove(),960);
+}
+
+// Start Screen Categories
+const names=[...Object.keys(D),"All categories","Custom word"];
+$("carts").innerHTML=names.map(n=>`<button class="cart" style="--c:${COL[n]}" data-c="${n}"><b>${n}</b><span>${n=="All categories"?"Mega mix of 120 words":n=="Custom word"?"2 players, pass & play":"30 words"}</span></button>`).join("");
+
+function initSession(daily=false){
+ Object.assign(S,{
+  score:0,streak:0,wins:0,losses:0,idx:-1,log:[],best:0,
+  daily,
+  stats:{dhoni:false,flawless:0,powerups:0,goldHits:0,allInWins:0}
+ });
+ $("dailyBadge").hidden=!daily;
+ $("dailyWrap").style.display=daily?"none":"flex";
+}
+
+function begin(p){
+ if(!S.log)initSession(false);
+ pool.push(p);
+ $("start").hidden=true;
+ $("custom").hidden=true;
+ nextWord();
+}
+
+$("dailyBtn").onclick=()=>{
+ initSession(true);
+ const allWords=Object.entries(D).flatMap(([k,v])=>v.map(w=>[w[0],w[1],k]));
+ pool=seededShuffle(allWords,todayStr).slice(0,ROUNDS);
+ $("start").hidden=true;
+ nextWord();
+};
+
+$("carts").onclick=e=>{
+ const b=e.target.closest(".cart");if(!b)return;
+ const c=b.dataset.c;
+ if(c=="Custom word"){$("start").hidden=true;$("custom").hidden=false;$("cw").focus();return}
+ if(!S.used)S.used=new Set();
+ const all=c=="All categories";
+ const src=(all?Object.entries(D).flatMap(([k,v])=>v.map(w=>[w[0],w[1],k])):D[c].map(w=>[w[0],w[1],c])).filter(x=>!S.used.has(x[0]));
+ const p=src[Math.random()*src.length|0];
+ S.used.add(p[0]);
+ begin(p);
+};
+
+$("cgo").onclick=()=>{
+ const w=$("cw").value.trim().toUpperCase();
+ if(!/^[A-Z]{2,20}$/.test(w)){$("cerr").textContent="Use 2 to 20 letters, with no spaces or numbers.";return}
+ const h=[1,2,3].map(i=>$("ch"+i).value.trim()||"No extra clue provided for this level!");
+ $("cw").value="";[1,2,3].forEach(i=>$("ch"+i).value="");$("cerr").textContent="";
+ begin([w,h,"Custom"]);$("msg").textContent="Player 2, your turn!";
+};
+$("cback").onclick=()=>{$("custom").hidden=true;$("start").hidden=false};
+
+$("kb").innerHTML="ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(l=>`<button class="key" data-l="${l}">${l}</button>`).join("");
+$("kb").onclick=e=>{const b=e.target.closest(".key");if(b)guess(b.dataset.l,b)};
+
+function startTimer(){
+ clearInterval(clockId);
+ clockId=setInterval(()=>{
+  if(S.over){clearInterval(clockId);return}
+  S.timeLeft--;
+  if(S.timeLeft<=10&&S.timeLeft>0)sfx("tick");
+  draw();
+  if(S.timeLeft<=0){
+   clearInterval(clockId);
+   $("msg").textContent="Time's up!";
+   finish(false,false,true);
+  }
+ },1000);
+}
+
+function nextWord(){
+ S.idx++;
+ const [w,h,c]=pool[S.idx];
+ const goldIdx=Math.floor(Math.random()*w.length);
+ Object.assign(S,{
+  w,cat:c,res:null,left:MAX,hn:1,hc:200,f5:0,boughtOnce:0,timeLeft:ROUND_TIME,
+  hints:h,got:new Set(),tried:new Set(),over:false,
+  goldIdx,goldClaimed:false
+ });
+ $("cat").textContent=c;$("stage").classList.remove("won","lost");$("bubble").classList.remove("on");
+ renderHints();
+ $("msg").textContent="";
+ document.querySelectorAll(".key").forEach(k=>{k.disabled=false;k.className="key"});
+ document.querySelectorAll(".p").forEach(p=>p.classList.remove("on"));
+ $("word").innerHTML=[...w].map((_,i)=>`<div class="tile blank${i===goldIdx?" gold":""}">_</div>`).join("");
+ $("end").hidden=true;
+ draw();
+ startTimer();
+}
+
+function draw(){
+ $("score").textContent=S.score;
+ $("streak").textContent=S.streak+"x"+(S.streak>=3?" 🔥":"");
+ $("stk").classList.toggle("hot",S.streak>=3);
+ $("round").textContent=(S.idx+1)+"/"+ROUNDS;
+ $("timer").textContent=S.timeLeft+"s";
+ $("hearts").innerHTML=Array.from({length:MAX},(_,i)=>`<i class="${i<S.left?"":"off"}">♥</i>`).join("");
+
+ // Danger Glow when 1 life left or <= 10 seconds
+ const isDanger=!S.over&&(S.left===1||S.timeLeft<=10);
+ $("stage").classList.toggle("danger",isDanger);
+ $("tmrBox").classList.toggle("danger",!S.over&&S.timeLeft<=10);
+
+ // Power-Up Button States (200/350 Hints, 350 50/50, 500 Buy Letter)
+ $("hint2").disabled=S.over||S.hn>=3||S.score<S.hc;
+ $("hint2").querySelector("small").textContent=S.hn>=3?"All 3 hints unlocked":`${S.hc} pts · key “$”`;
+
+ $("fifty").disabled=S.over||S.score<350||!!S.f5;
+ $("fifty").querySelector("small").textContent=S.f5?"Used this round":"350 pts · key “%”";
+
+ $("buy").disabled=S.over||S.score<500||!!S.boughtOnce;
+ $("buy").querySelector("small").textContent=S.boughtOnce?"Used this round":(S.score<500?`Need ${500-S.score} more pts · key “?”`:"500 pts · key “?”");
+
+ $("allin").disabled=S.over;
+
+ const t=$("word").children;
+ [...S.w].forEach((ch,i)=>{
+  if(S.got.has(ch)&&t[i].classList.contains("blank")){
+   const wasGold=(i===S.goldIdx);
+   t[i].className=wasGold?"tile goldHit pop":"tile pop";
+   t[i].textContent=ch;
+  }
+ });
+ const pl=S.res===true?[1,2,5,6]:S.res===false?[1,2,3,4,5,6]:null;
+ for(let i=1;i<=MAX;i++)$("p"+i).classList.toggle("on",pl?pl.includes(i):MAX-S.left>=i);
+ $("a3w").classList.toggle("on",S.res===true);$("a4w").classList.toggle("on",S.res===true);
+ $("stage").classList.toggle("hh",S.res!==null||MAX-S.left>=1);
+}
+
+function won(){return [...S.w].every(c=>S.got.has(c))}
+function mark(l,hit){const k=document.querySelector(`.key[data-l="${l}"]`);if(k){k.disabled=true;k.classList.add(hit?"hit":"miss")}}
+
+function checkGoldTile(letter,anchorEl){
+ if(!S.goldClaimed && S.w[S.goldIdx]===letter){
+  S.goldClaimed=true;
+  S.score+=150;
+  S.stats.goldHits++;
+  setTimeout(()=>popFloat("✨ +150 GOLDEN!","var(--yl)",$("word").children[S.goldIdx]||anchorEl),160);
+  return true;
+ }
+ return false;
+}
+
+function guess(l,btnEl){
+ if(S.over||S.tried.has(l))return;
+ S.tried.add(l);
+ const keyBtn=btnEl||document.querySelector(`.key[data-l="${l}"]`);
+
+ if(S.w.includes(l)){
+  S.got.add(l);
+  S.streak=Math.min(4,S.streak+1);
+  S.best=Math.max(S.best,S.streak);
+  const pts=S.streak*50;
+  S.score+=pts;
+  mark(l,1);
+  sfx("ok");
+  popFloat(`+${pts}`, "var(--ok)", keyBtn);
+  if(S.streak>=3)say("streak");
+  const gotGold=checkGoldTile(l,keyBtn);
+  $("msg").textContent=gotGold
+   ? `✨ GOLDEN TILE! +${pts} pts + 150 bonus (${S.streak}x streak)`
+   : `Correct! +${pts} pts (${S.streak}x streak)`;
+ }else{
+  S.left--;
+  S.streak=0;
+  S.score=Math.max(0,S.score-30);
+  mark(l,0);
+  sfx("bad");
+  popFloat("-30","var(--pk)",keyBtn);
+  if(S.left===1)say("low");
+  try{navigator.vibrate(120)}catch(e){}
+  $("msg").textContent="Wrong letter! -30 pts & streak reset.";
+  const st=$("stage");st.classList.remove("shake");void st.offsetWidth;st.classList.add("shake");
+ }
+ check();
+}
+
+function buy(){
+ if(S.over||S.score<500||S.boughtOnce)return;
+ const l=[...S.w].find(c=>!S.got.has(c));if(!l)return;
+ S.score-=500;
+ S.boughtOnce=1;
+ S.stats.powerups++;
+ S.got.add(l);
+ S.tried.add(l);
+ mark(l,1);
+ popFloat("-500","var(--yl)",$("buy"));
+ const gotGold=checkGoldTile(l,$("buy"));
+ $("msg").textContent=gotGold?`Bought “${l}” & hit the ✨ Golden Tile (+150)!`:`Bought “${l}” for 500 pts.`;
+ sfx("buy");
+ check();
+}
+
+function check(){draw();if(won())finish(true);else if(S.left<=0)finish(false)}
+
+function finish(win,allin=false,timeout=false){
+ clearInterval(clockId);
+ S.over=true;
+ $("stage").classList.remove("danger");
+ $("tmrBox").classList.remove("danger");
+ S.log.push([S.w,win]);
+
+ if(win){
+  S.wins++;
+  const bonus=100+(S.left*20);
+  S.score+=bonus;
+  if(S.left===MAX)S.stats.flawless++;
+  if(S.left===1||S.timeLeft<=6)S.stats.dhoni=true;
+  if(allin)S.stats.allInWins++;
+  popFloat(`+${bonus} CLEAR!`,"var(--yl)");
+  confetti();
+  S.res=true;pose();jingle(true);say("win");$("stage").classList.add("won");
+ }else{
+  S.losses++;
+  S.res=false;jingle(false);say("lose");$("stage").classList.add("lost");
+  [...S.w].forEach((c,i)=>{
+   const t=$("word").children[i];
+   if(!S.got.has(c)){t.className="tile lost";t.textContent=c}
+  });
+ }
+ draw();
+ document.querySelectorAll(".key").forEach(k=>k.disabled=true);
+
+ setTimeout(()=>{
+  const last=S.idx==ROUNDS-1;
+  if(last){showFinal();return}
+  $("etitle").textContent=win?(allin?"All-In Jackpot!":"Round Cleared!"):(timeout?"Time's Up!":"Game Over");
+  const bonus=100+(S.left*20);
+  $("eword").textContent=win
+   ? `Word: ${S.w} · +100 clear + ${S.left*20} life bonus (+${bonus} pts)`
+   : `The word was ${S.w}.`;
+  $("eScore").textContent=S.score;
+  $("eStreak").textContent=S.streak+"x";
+  $("eWL").textContent=S.wins+"–"+S.losses;
+  $("next").textContent=S.daily?"Next Daily Word":"Next round";
+  $("next").onclick=()=>{
+   $("end").hidden=true;
+   if(S.daily){nextWord()}
+   else{
+    $("rnd").textContent=`Round ${S.idx+2} of ${ROUNDS}: pick a category`;
+    $("start").hidden=false;
+   }
+  };
+  $("xit").hidden=last;
+  $("end").hidden=false;
+  $("next").focus();
+ },win?2400:3000);
+}
+
+$("buy").onclick=buy;
+$("hint2").onclick=hint2;
+$("fifty").onclick=fifty;
+$("menu").onclick=()=>location.reload();
+$("exit").onclick=$("xit").onclick=()=>{if(pool.length){clearInterval(clockId);S.over=true;showFinal()}};
+$("fagain").onclick=()=>location.reload();
+$("snd").onclick=()=>{mute=!mute;DesiSoundEngine.setMuted(mute);$("snd").querySelector("b").textContent=mute?"Sound off":"Sound on"};
+
+let mute=false,AC;
+function sfx(t){
+ if(mute)return;
+ try{
+  AC=AC||new(window.AudioContext||window.webkitAudioContext)();
+  const q={
+   ok:[[660,.08]],
+   bad:[[160,.25,"sawtooth"]],
+   win:[[523,.1],[659,.1],[784,.25]],
+   lose:[[300,.15],[220,.15],[140,.3]],
+   buy:[[880,.07],[1100,.1]],
+   tick:[[980,.04,"sine"]]
+  }[t];
+  let at=AC.currentTime;
+  for(const[f,d,w]of q){
+   const o=AC.createOscillator(),g=AC.createGain();
+   o.type=w||"square";
+   o.frequency.value=f;
+   g.gain.setValueAtTime(t==="tick"?.025:.06,at);
+   g.gain.exponentialRampToValueAtTime(.001,at+d);
+   o.connect(g);g.connect(AC.destination);
+   o.start(at);o.stop(at+d);at+=d;
+  }
+ }catch(e){}
+}
+
+function confetti(){
+ if(matchMedia("(prefers-reduced-motion:reduce)").matches)return;
+ const c=document.createElement("canvas");
+ c.style.cssText="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9";
+ c.width=innerWidth;c.height=innerHeight;
+ document.body.appendChild(c);
+ const x=c.getContext("2d"),P=Array.from({length:120},()=>({x:Math.random()*c.width,y:-20-Math.random()*c.height*.5,vx:Math.random()*4-2,vy:2+Math.random()*4,r:4+Math.random()*5,c:["#ffc93c","#ff5c9d","#6fe3ff","#5dffb0"][Math.random()*4|0]}));
+ let f=0;(function t(){x.clearRect(0,0,c.width,c.height);P.forEach(p=>{p.x+=p.vx;p.y+=p.vy;x.fillStyle=p.c;x.fillRect(p.x,p.y,p.r,p.r*1.6)});if(++f<150)requestAnimationFrame(t);else c.remove()})();
+}
+
+function renderHints(){
+ $("hint").innerHTML=S.hints.slice(0,S.hn).map((t,i)=>`<span style="display:block;margin-bottom:5px"><b style="color:var(--cy)">Hint ${i+1}${i?"":" (free)"}</b> ${esc(t)}</span>`).join("");
+}
+
+function hint2(){
+ if(S.over||S.hn>=3||S.score<S.hc)return;
+ const cost=S.hc;
+ S.score-=cost;
+ S.hn++;
+ S.hc+=150; // 200 -> 350
+ S.stats.powerups++;
+ popFloat(`-${cost}`,"var(--yl)",$("hint2"));
+ renderHints();
+ $("msg").textContent=`Hint ${S.hn} unlocked (-${cost} pts).`;
+ sfx("buy");
+ draw();
+}
+
+function fifty(){
+ if(S.over||S.score<350||S.f5)return;
+ const bad="ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").filter(l=>!S.w.includes(l)&&!S.tried.has(l));
+ if(bad.length<4)return;
+ S.score-=350;
+ S.f5=1;
+ S.stats.powerups++;
+ popFloat("-350","var(--yl)",$("fifty"));
+ shuffle(bad).slice(0,Math.ceil(bad.length/2)).forEach(l=>{
+  S.tried.add(l);
+  const k=document.querySelector(`.key[data-l="${l}"]`);
+  if(k){k.disabled=true;k.classList.add("miss")}
+ });
+ $("msg").textContent="50/50: half of the wrong letters eliminated!";
+ sfx("buy");
+ draw();
+}
+
+function buildBadges(){
+ const b=[];
+ if(S.stats.dhoni)b.push(["🏏 Dhoni Finisher","Won a round on 1 life or under 6 seconds"]);
+ if(S.stats.flawless>0)b.push(["💯 100% Strike Rate",`Cleared ${S.stats.flawless} word(s) with zero wrong letters`]);
+ if(S.best>=4)b.push(["🔥 Gabbar's Nightmare","Hit the maximum 4x combo streak"]);
+ if(S.stats.goldHits>=2)b.push(["✨ Golden Touch",`Uncovered ${S.stats.goldHits} Golden Mystery Tiles`]);
+ if(S.stats.powerups>=3)b.push(["🛠️ Jugaad Master","Used 3+ tactical power-ups in one run"]);
+ if(S.stats.allInWins>0)b.push(["🎲 High Roller","Nailed a sudden-death All-In word guess"]);
+ if(!b.length)b.push(["🎮 Arcade Challenger","Completed an Arcade Hangman session"]);
+ return b.map(([t,d])=>`<div class="badge">${t}<small>${d}</small></div>`).join("");
+}
+
+function showFinal(){
+ clearInterval(clockId);
+ const n=S.wins+S.losses;
+ const g=(S.wins===ROUNDS&&S.score>=2200)?"S+":S.wins>=7?"S":S.wins>=5?"A":S.wins>=3?"B":S.wins>=1?"C":"D";
+ $("fgrade").textContent=g;
+ $("ftitle").textContent=n==ROUNDS?(S.daily?"Daily Challenge Cleared!":"Cabinet Cleared!"):"Thanks for playing!";
+ $("fScore").textContent=S.score;
+ $("fBest").textContent=S.best+"x";
+ $("fWL").textContent=S.wins+"–"+S.losses;
+ $("fbadges").innerHTML=buildBadges();
+ $("flist").innerHTML=S.log.map(([w,ok])=>`<span style="padding:3px 10px;border-radius:99px;font-weight:700;background:${ok?"#5dffb0":"#ff5c9d"};color:#0d1431">${w}</span>`).join("")||"No words played yet.";
+ const modeTag=S.daily?`Daily Challenge (${todayStr})`:"Arcade Mode";
+ const txt=`I scored ${S.score} pts (Grade ${g}) on Arcade Hangman [${modeTag}] — ${S.wins}/${n} words, ${S.best}x best streak!`;
+ $("fshare").onclick=async()=>{try{if(navigator.share){await navigator.share({text:txt})}else{await navigator.clipboard.writeText(txt);$("fmsg").textContent="Copied result to clipboard!"}}catch(e){$("fmsg").textContent=txt}};
+ $("fmsg").textContent="";
+ $("end").hidden=true;$("gamble").hidden=true;$("final").hidden=false;
+ if(S.wins)confetti();
+ $("fagain").focus();
+}
+
+function openAll(){if(S.over||!pool.length)return;$("gamble").hidden=false;$("gin").value="";$("gin").focus()}
+$("allin").onclick=openAll;
+$("gno").onclick=()=>$("gamble").hidden=true;
+
+function lock(){
+ const g=$("gin").value.trim().toUpperCase();if(!g)return;
+ $("gamble").hidden=true;
+ if(g===S.w){
+  [...S.w].forEach(c=>S.got.add(c));
+  S.score+=300;
+  popFloat("+300 JACKPOT!","var(--yl)");
+  draw();
+  finish(true,true);
+ }else{
+  S.left=0;
+  S.score=Math.max(0,S.score-200);
+  popFloat("-200 K.O.","var(--pk)");
+  draw();
+  finish(false,true);
+ }
+}
+$("gok").onclick=lock;
+$("gin").onkeydown=e=>{if(e.key==="Enter")lock();if(e.key==="Escape")$("gno").click()};
+
+document.addEventListener("keydown",e=>{
+ if(!$("start").hidden||!$("end").hidden||!$("gamble").hidden||!$("final").hidden||!$("custom").hidden||e.metaKey||e.ctrlKey)return;
+ if(/^[a-z]$/i.test(e.key))guess(e.key.toUpperCase());
+ else if(e.key==="$")hint2();
+ else if(e.key==="%")fifty();
+ else if(e.key==="?")buy();
+ else if(e.key==="!"){e.preventDefault();openAll()}
+});
+
+// ===== Deluxe finale: speech bubbles, victory poses, category sounds =====
+const LINES={
+ "Bollywood":{streak:["Balle Balle!","Picture abhi baaki hai!"],low:["Arre bhai, dekh ke!"],lose:["Khatam! Tata! Bye-Bye!"],win:["Picture hit hai!"]},
+ "Cricket":{streak:["Sixer!","Chauka maar diya!"],low:["Last wicket, bhai!"],lose:["Clean Bowled!"],win:["Howzzat! Not out!"]},
+ "Street Food":{streak:["Ek number, bhaiya!","Garma garam!"],low:["Thoda teekha ho gaya!"],lose:["Mirchi lag gayi!"],win:["Paisa vasool!"]},
+ "Desi Nostalgia & College Life":{streak:["Topper material!","Backbench ka hero!"],low:["Attendance short hai!"],lose:["Proxy pakda gaya!"],win:["Pass ho gaye, party!"]},
+ def:{streak:["On fire!"],low:["Careful now!"],lose:["Game over!"],win:["You did it!"]}};
+function say(k){const L=(LINES[S.cat]||LINES.def)[k],b=$("bubble");b.textContent=L[Math.random()*L.length|0];b.classList.add("on");clearTimeout(say.t);say.t=setTimeout(()=>b.classList.remove("on"),k=="win"||k=="lose"?3500:2200)}
+function pose(){const o=S.cat=="Bollywood";
+ $("a3w").setAttribute("d",o?"M180 128L140 136":"M180 128L152 96");
+ $("a4w").setAttribute("d",o?"M180 128L220 136":"M180 128L208 96");
+ const P={"Bollywood":["🌹",228,142],"Cricket":["🏏",212,92],"Street Food":["🥟",212,92],"Desi Nostalgia & College Life":["☕",212,92]}[S.cat]||["⭐",212,92];
+ const p=$("prop");p.textContent=P[0];p.setAttribute("x",P[1]);p.setAttribute("y",P[2])}
+function jingle(win){
+ if(mute)return;
+ if(/bollywood|cricket|street food|nostalgia|college/i.test(S.cat||""))DesiSoundEngine.playRoundOutcome(S.cat,win);
+ else sfx(win?"win":"lose");
+}
+
+/**
+ * DesiSoundEngine.js
+ * Complete Web Audio API + Web Speech API Commentary & Bollywood Synth Engine
+ * Drop into Arcade Hangman Deluxe and call DesiSoundEngine.playRoundOutcome(category, isWin)
+ */
+
+const DesiSoundEngine = (() => {
+  let ctx = null;
+  let isMuted = false;
+
+  function init() {
+    if (!ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      ctx = new AudioCtx();
+    }
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+  }
+
+  // Helper: Generate white/pink noise buffer
+  function createNoiseBuffer(duration) {
+    const bufferSize = ctx.sampleRate * duration;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    return buffer;
+  }
+
+  // Helper: Trigger triple screen flash for Bollywood drama
+  function triggerTripleFlash() {
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let flashOverlay = document.getElementById('dramatic-flash-overlay');
+    if (!flashOverlay) {
+      flashOverlay = document.createElement('div');
+      flashOverlay.id = 'dramatic-flash-overlay';
+      Object.assign(flashOverlay.style, {
+        position: 'fixed',
+        inset: '0',
+        backgroundColor: 'white',
+        opacity: '0',
+        pointerEvents: 'none',
+        zIndex: '9999',
+        transition: 'opacity 0.08s ease-out'
+      });
+      document.body.appendChild(flashOverlay);
+    }
+
+    const timings = [0, 220, 440];
+    timings.forEach((delay) => {
+      setTimeout(() => {
+        flashOverlay.style.opacity = '0.85';
+        setTimeout(() => {
+          flashOverlay.style.opacity = '0';
+        }, 90);
+      }, delay);
+    });
+  }
+
+  // Helper: Play a sequence of musical notes (synth melody)
+  function playMelody(notes, waveType = 'sawtooth', baseGain = 0.22) {
+    const now = ctx.currentTime;
+    notes.forEach((n) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = n.type || waveType;
+      osc.frequency.setValueAtTime(n.f, now + n.t);
+      if (n.slideTo) {
+        osc.frequency.exponentialRampToValueAtTime(n.slideTo, now + n.t + n.d);
+      }
+
+      const vol = n.gain || baseGain;
+      gain.gain.setValueAtTime(vol, now + n.t);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + n.t + n.d);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + n.t);
+      osc.stop(now + n.t + n.d);
+    });
+  }
+
+  // ==========================================
+  // 1. BOLLYWOOD (Songs + Drama + Iconic Lines)
+  // ==========================================
+  function playBollywoodLose() {
+    init();
+    triggerTripleFlash();
+    const now = ctx.currentTime;
+
+    // 1. Dramatic 3-hit "Dhoom-Tan-Na-Na" soap-opera sting
+    const hits = [
+      { time: 0.0, freq: 110, dur: 0.25 },
+      { time: 0.22, freq: 116.54, dur: 0.25 },
+      { time: 0.44, freq: 103.83, dur: 0.7 }
+    ];
+
+    hits.forEach((h) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(h.freq, now + h.time);
+      osc.frequency.exponentialRampToValueAtTime(h.freq * 0.96, now + h.time + h.dur);
+
+      gain.gain.setValueAtTime(0.38, now + h.time);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + h.time + h.dur);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + h.time);
+      osc.stop(now + h.time + h.dur);
+
+      // Thunderous timpani/dhol impact
+      const drum = ctx.createOscillator();
+      const drumGain = ctx.createGain();
+      drum.type = 'sine';
+      drum.frequency.setValueAtTime(140, now + h.time);
+      drum.frequency.exponentialRampToValueAtTime(38, now + h.time + 0.35);
+
+      drumGain.gain.setValueAtTime(0.55, now + h.time);
+      drumGain.gain.exponentialRampToValueAtTime(0.001, now + h.time + 0.35);
+
+      drum.connect(drumGain);
+      drumGain.connect(ctx.destination);
+      drum.start(now + h.time);
+      drum.stop(now + h.time + 0.35);
+    });
+
+    // 2. Sad Bollywood Violin / Sad Song Motif ("Kal Ho Naa Ho" style melancholic descent)
+    const sadSongNotes = [
+      { t: 0.75, f: 659.25, d: 0.35, type: 'sine', gain: 0.22 }, // E5
+      { t: 1.12, f: 587.33, d: 0.35, type: 'sine', gain: 0.22 }, // D5
+      { t: 1.49, f: 523.25, d: 0.45, type: 'sine', gain: 0.22 }, // C5
+      { t: 1.96, f: 493.88, d: 0.65, type: 'sine', gain: 0.24 }  // B4
+    ];
+    playMelody(sadSongNotes);
+
+  }
+
+  function playBollywoodWin() {
+    init();
+    const now = ctx.currentTime;
+
+    // 1. Snappy Tabla "Dha-Ge-Na-Ti" Groove
+    const tablaHits = [
+      { t: 0.0, f: 160, endF: 95 },
+      { t: 0.16, f: 320, endF: 280 },
+      { t: 0.32, f: 160, endF: 95 },
+      { t: 0.48, f: 420, endF: 390 },
+      { t: 0.64, f: 160, endF: 95 },
+      { t: 0.80, f: 420, endF: 390 }
+    ];
+    tablaHits.forEach((hit) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(hit.f, now + hit.t);
+      osc.frequency.exponentialRampToValueAtTime(hit.endF, now + hit.t + 0.12);
+      gain.gain.setValueAtTime(0.42, now + hit.t);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + hit.t + 0.12);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + hit.t);
+      osc.stop(now + hit.t + 0.12);
+    });
+
+    // 2. Iconic Bollywood Song Synth Hooks (Randomly picks a classic hook!)
+    const songHooks = [
+      // Hook A: "Dhoom Machale" style synth riff
+      [
+        { t: 0.05, f: 329.63, d: 0.14 }, // E4
+        { t: 0.21, f: 329.63, d: 0.14 }, // E4
+        { t: 0.37, f: 392.00, d: 0.14 }, // G4
+        { t: 0.53, f: 440.00, d: 0.22 }, // A4
+        { t: 0.78, f: 392.00, d: 0.14 }, // G4
+        { t: 0.94, f: 329.63, d: 0.35 }  // E4
+      ],
+      // Hook B: "Tujhe Dekha To" iconic mandolin/synth phrase
+      [
+        { t: 0.05, f: 523.25, d: 0.18, type: 'triangle' }, // C5
+        { t: 0.25, f: 587.33, d: 0.18, type: 'triangle' }, // D5
+        { t: 0.45, f: 659.25, d: 0.24, type: 'triangle' }, // E5
+        { t: 0.72, f: 587.33, d: 0.16, type: 'triangle' }, // D5
+        { t: 0.90, f: 523.25, d: 0.18, type: 'triangle' }, // C5
+        { t: 1.10, f: 783.99, d: 0.42, type: 'triangle' }  // G5
+      ],
+      // Hook C: "Jai Ho" upbeat celebratory brass fanfare
+      [
+        { t: 0.05, f: 440.00, d: 0.15 }, // A4
+        { t: 0.22, f: 554.37, d: 0.15 }, // C#5
+        { t: 0.39, f: 659.25, d: 0.22 }, // E5
+        { t: 0.65, f: 880.00, d: 0.45 }  // A5
+      ]
+    ];
+    const chosenHook = songHooks[Math.floor(Math.random() * songHooks.length)];
+    playMelody(chosenHook, 'sawtooth', 0.24);
+
+  }
+
+  // ==========================================
+  // 2. CRICKET (Stumps + Stadium + Iconic Commentary)
+  // ==========================================
+  function playCricketLose() {
+    init();
+    const now = ctx.currentTime;
+
+    // 1. Woody rattle of bails flying off stumps
+    const clackTimes = [0, 0.06, 0.14, 0.24];
+    clackTimes.forEach((t) => {
+      const noise = ctx.createBufferSource();
+      noise.buffer = createNoiseBuffer(0.05);
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 1100;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.5, now + t);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + t + 0.05);
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      noise.start(now + t);
+    });
+
+    // 2. Umpire finger-raising whistle
+    const whistle = ctx.createOscillator();
+    const wGain = ctx.createGain();
+    whistle.type = 'sine';
+    whistle.frequency.setValueAtTime(2600, now + 0.25);
+    whistle.frequency.linearRampToValueAtTime(3100, now + 0.45);
+    wGain.gain.setValueAtTime(0.18, now + 0.25);
+    wGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    whistle.connect(wGain);
+    wGain.connect(ctx.destination);
+    whistle.start(now + 0.25);
+    whistle.stop(now + 0.5);
+
+    // 3. Stadium crowd "AWWW!" groan
+    const crowd = ctx.createBufferSource();
+    crowd.buffer = createNoiseBuffer(1.0);
+    const cFilter = ctx.createBiquadFilter();
+    cFilter.type = 'bandpass';
+    cFilter.frequency.setValueAtTime(550, now + 0.35);
+    cFilter.frequency.exponentialRampToValueAtTime(240, now + 1.3);
+    cFilter.Q.value = 3;
+    const cGain = ctx.createGain();
+    cGain.gain.setValueAtTime(0.01, now + 0.35);
+    cGain.gain.linearRampToValueAtTime(0.32, now + 0.55);
+    cGain.gain.exponentialRampToValueAtTime(0.001, now + 1.35);
+    crowd.connect(cFilter);
+    cFilter.connect(cGain);
+    cGain.connect(ctx.destination);
+    crowd.start(now + 0.35);
+
+  }
+
+  function playCricketWin() {
+    init();
+    const now = ctx.currentTime;
+
+    // 1. Clean bat-on-ball leather crack
+    const crack = ctx.createBufferSource();
+    crack.buffer = createNoiseBuffer(0.06);
+    const crackFilter = ctx.createBiquadFilter();
+    crackFilter.type = 'highpass';
+    crackFilter.frequency.value = 900;
+    const crackGain = ctx.createGain();
+    crackGain.gain.setValueAtTime(0.7, now);
+    crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+    crack.connect(crackFilter);
+    crackFilter.connect(crackGain);
+    crackGain.connect(ctx.destination);
+    crack.start(now);
+
+    // 2. Rising stadium crowd roar
+    const roar = ctx.createBufferSource();
+    roar.buffer = createNoiseBuffer(1.4);
+    const rFilter = ctx.createBiquadFilter();
+    rFilter.type = 'lowpass';
+    rFilter.frequency.setValueAtTime(400, now + 0.08);
+    rFilter.frequency.exponentialRampToValueAtTime(1800, now + 0.9);
+    const rGain = ctx.createGain();
+    rGain.gain.setValueAtTime(0.01, now + 0.08);
+    rGain.gain.linearRampToValueAtTime(0.32, now + 0.7);
+    rGain.gain.exponentialRampToValueAtTime(0.001, now + 1.45);
+    roar.connect(rFilter);
+    rFilter.connect(rGain);
+    rGain.connect(ctx.destination);
+    roar.start(now + 0.08);
+
+    // 3. 4/6 Boundary Stadium Horn (Pa-pa-pa-paaa!)
+    const hornNotes = [
+      { t: 0.25, f: 523.25, d: 0.1 },
+      { t: 0.38, f: 523.25, d: 0.1 },
+      { t: 0.51, f: 523.25, d: 0.1 },
+      { t: 0.65, f: 659.25, d: 0.45 }
+    ];
+    playMelody(hornNotes, 'sawtooth', 0.2);
+
+  }
+
+  // ==========================================
+  // 3. STREET FOOD (Sizzle + Chaat Cart + Commentary)
+  // ==========================================
+  function playStreetFoodLose() {
+    init();
+    const now = ctx.currentTime;
+
+    // 1. Hot tawa sizzle (ssshhhh!)
+    const sizzle = ctx.createBufferSource();
+    sizzle.buffer = createNoiseBuffer(0.55);
+    const sFilter = ctx.createBiquadFilter();
+    sFilter.type = 'highpass';
+    sFilter.frequency.value = 3500;
+    const sGain = ctx.createGain();
+    sGain.gain.setValueAtTime(0.35, now);
+    sGain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+    sizzle.connect(sFilter);
+    sFilter.connect(sGain);
+    sGain.connect(ctx.destination);
+    sizzle.start(now);
+
+    // 2. Cartoon slide-whistle drop ("Mirchi lag gayi!")
+    const whistle = ctx.createOscillator();
+    const wGain = ctx.createGain();
+    whistle.type = 'sine';
+    whistle.frequency.setValueAtTime(1600, now + 0.35);
+    whistle.frequency.exponentialRampToValueAtTime(280, now + 0.95);
+    wGain.gain.setValueAtTime(0.28, now + 0.35);
+    wGain.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
+    whistle.connect(wGain);
+    wGain.connect(ctx.destination);
+    whistle.start(now + 0.35);
+    whistle.stop(now + 0.95);
+
+  }
+
+  function playStreetFoodWin() {
+    init();
+    const now = ctx.currentTime;
+
+    // 1. Crunchy golgappa/papdi crackle bursts
+    [0, 0.05, 0.11, 0.18].forEach((offset) => {
+      const crunch = ctx.createBufferSource();
+      crunch.buffer = createNoiseBuffer(0.04);
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 2400;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.45, now + offset);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.04);
+      crunch.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      crunch.start(now + offset);
+    });
+
+    // 2. Happy street cart vendor bell chime
+    [0.25, 0.42].forEach((t) => {
+      const bell = ctx.createOscillator();
+      const gain = ctx.createGain();
+      bell.type = 'sine';
+      bell.frequency.setValueAtTime(1975.53, now + t);
+      gain.gain.setValueAtTime(0.3, now + t);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + t + 0.4);
+      bell.connect(gain);
+      gain.connect(ctx.destination);
+      bell.start(now + t);
+      bell.stop(now + t + 0.4);
+    });
+
+  }
+
+  // ==========================================
+  // 4. DESI NOSTALGIA & COLLEGE LIFE
+  // ==========================================
+  function playCollegeLose() {
+    init();
+    const now = ctx.currentTime;
+
+    // 1. Loud college lecture bell (TRINGGG!)
+    for (let i = 0; i < 8; i++) {
+      const t = i * 0.045;
+      const bell = ctx.createOscillator();
+      const gain = ctx.createGain();
+      bell.type = 'square';
+      bell.frequency.setValueAtTime(1850, now + t);
+      gain.gain.setValueAtTime(0.18, now + t);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + t + 0.04);
+      bell.connect(gain);
+      gain.connect(ctx.destination);
+      bell.start(now + t);
+      bell.stop(now + t + 0.04);
+    }
+
+    // 2. Dramatic low trombone "wah-wah-wah-waaaah"
+    const notes = [
+      { t: 0.42, f: 146.83, d: 0.2 },
+      { t: 0.64, f: 138.59, d: 0.2 },
+      { t: 0.86, f: 130.81, d: 0.2 },
+      { t: 1.08, f: 123.47, d: 0.6, slideTo: 105 }
+    ];
+    playMelody(notes, 'sawtooth', 0.24);
+
+  }
+
+  function playCollegeWin() {
+    init();
+    const now = ctx.currentTime;
+
+    // 1. Nostalgic retro 8-bit Doordarshan / 90s TV chime
+    const ddNotes = [
+      { t: 0.0, f: 440.0, d: 0.14 },  // A4
+      { t: 0.15, f: 554.37, d: 0.14 }, // C#5
+      { t: 0.3, f: 659.25, d: 0.14 },  // E5
+      { t: 0.45, f: 880.0, d: 0.3 }    // A5
+    ];
+    playMelody(ddNotes, 'square', 0.16);
+
+    // 2. Cheerful canteen steel/glass cup clink
+    [0.78, 0.86].forEach((t, idx) => {
+      const clink = ctx.createOscillator();
+      const gain = ctx.createGain();
+      clink.type = 'sine';
+      clink.frequency.setValueAtTime(idx === 0 ? 2800 : 3400, now + t);
+      gain.gain.setValueAtTime(0.22, now + t);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + t + 0.15);
+      clink.connect(gain);
+      gain.connect(ctx.destination);
+      clink.start(now + t);
+      clink.stop(now + t + 0.15);
+    });
+
+  }
+
+
+  // Public API
+  return {
+    setMuted(muted) {
+      isMuted = muted;
+    },
+    playRoundOutcome(category, isWin) {
+      if (isMuted) return;
+      const cat = (category || '').toLowerCase();
+
+      if (cat.includes('bollywood')) {
+        isWin ? playBollywoodWin() : playBollywoodLose();
+      } else if (cat.includes('cricket')) {
+        isWin ? playCricketWin() : playCricketLose();
+      } else if (cat.includes('street food')) {
+        isWin ? playStreetFoodWin() : playStreetFoodLose();
+      } else if (cat.includes('nostalgia') || cat.includes('college')) {
+        isWin ? playCollegeWin() : playCollegeLose();
+      }
+    }
+  };
+})();
+
+</script>
+</body></html>
